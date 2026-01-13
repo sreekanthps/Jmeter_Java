@@ -1,0 +1,14 @@
+com/example/loadtest/apis/RegistrationUVMCApiTest.class
+com/example/loadtest/apis/SingleRequestTest.class
+com/example/loadtest/model/ProfileRequest.class
+com/example/loadtest/model/PasswordEncryptRequest.class
+com/example/loadtest/config/ApiConstants.class
+com/example/loadtest/data/TestData.class
+com/example/loadtest/apis/LoginApiTest.class
+com/example/loadtest/model/UserAutoSignInRequest.class
+com/example/loadtest/config/TestConfig.class
+com/example/loadtest/model/NotificationTokenRequest.class
+com/example/loadtest/model/UpdateDeviceRequest.class
+com/example/loadtest/apis/RegistrationApiTest.class
+com/example/loadtest/JMeterRunner.class
+com/example/loadtest/model/RegistrationInitRequest.class

@@ -1,0 +1,5 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1767857586944,211,HTTP Request,200,OK,Thread Group 1-1,text,true,,774,225,1,1,https://cauth-sit.nets.com.sg/ciam-api/test/rsa,205,0,118
+1767857587157,193,HTTP Request,200,OK,Thread Group 1-1,text,true,,914,720,1,1,https://cauth-sit.nets.com.sg/ciam-api/v1/registration/init,193,0,73
+1767857587382,200,HTTP Request,401,Unauthorized,Thread Group 1-1,text,false,,538,497,1,1,https://cauth-sit.nets.com.sg/ciam-api/v1/registration/profile,200,0,92
+1767857587583,179,HTTP Request,200,OK,Thread Group 1-1,text,true,,491,467,1,1,https://cauth-sit.nets.com.sg/ciam-api/test/registration/encrypt/password,179,0,85
