@@ -1,0 +1,18 @@
+# Build output
+target/
+
+# JMeter reports
+uvmc-html-report/
+html-report/
+
+# JMeter results
+uvmc-results.jtl/
+results.jtl/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
