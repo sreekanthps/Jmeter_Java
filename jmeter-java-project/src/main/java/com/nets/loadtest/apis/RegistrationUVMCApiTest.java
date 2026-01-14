@@ -1,6 +1,7 @@
 package com.nets.loadtest.apis;
 
 import static us.abstracta.jmeter.javadsl.JmeterDsl.*;
+import us.abstracta.jmeter.javadsl.core.postprocessors.DslRegexExtractor;
 import org.apache.http.entity.ContentType;
 import com.google.gson.Gson;
 
@@ -8,7 +9,10 @@ import com.nets.loadtest.config.ApiConstants;
 import com.nets.loadtest.config.TestConfig;
 import com.nets.loadtest.data.TestData;
 import com.nets.loadtest.model.NotificationTokenRequest;
+import com.nets.loadtest.model.CardTransactionRequest;
+
 import com.nets.loadtest.model.UpdateDeviceRequest;
+import com.nets.loadtest.service.CardEncryptionService;
 import com.nets.loadtest.model.UserAutoSignInRequest;
 
 import java.io.IOException;
@@ -47,12 +51,22 @@ public class RegistrationUVMCApiTest {
                                 TestData.DEVICE_TYPE,
                                 TestData.FCM_TOKEN);
 
+                // Create request payload for card transaction
+                CardTransactionRequest cardTransactionRequest = new CardTransactionRequest(
+                                "1111737999876626",
+                                "liew",
+                                "4111111111111111",
+                                "0",
+                                "111",
+                                "122030",
+                                3000);
+
                 testPlan(
                                 // CSV Data Set Config to read email and onboardingId from export_20260112.csv
                                 csvDataSet("export_20260112.csv"),
 
                                 threadGroup()
-                                                .rampToAndHold(10, Duration.ofSeconds(3), Duration.ofSeconds(0))
+                                                .rampToAndHold(1, Duration.ofSeconds(3), Duration.ofSeconds(0))
                                                 .children(
                                                                 // Thread Group: 10 threads with 3 seconds ramp-up
                                                                 // period
@@ -67,7 +81,7 @@ public class RegistrationUVMCApiTest {
                                                                 // version
 
                                                                 // POST request for auth/userAutoSignIn
-                                                                httpSampler("auth/userAutoSignIn",
+                                                                httpSampler(ApiConstants.UVMC_AUTH_USER_AUTO_SIGNIN,
                                                                                 config.getBaseUrl()
                                                                                                 + ApiConstants.UVMC_AUTH_USER_AUTO_SIGNIN)
                                                                                 .post(gson.toJson(autoSignInRequest),
@@ -118,7 +132,7 @@ public class RegistrationUVMCApiTest {
 
                                                                 // POST request for auth/login/ack using the extracted
                                                                 // accessToken
-                                                                httpSampler("auth/login/ack",
+                                                                httpSampler(ApiConstants.UVMC_AUTH_LOGIN_ACK,
                                                                                 config.getBaseUrl()
                                                                                                 + ApiConstants.UVMC_AUTH_LOGIN_ACK)
                                                                                 .post("", ContentType.APPLICATION_JSON)
@@ -136,347 +150,451 @@ public class RegistrationUVMCApiTest {
                                                                                 // response data if needed
                                                                                 ),
 
-                                                                // Start Loop for Authenticated Requests
-                                                                forLoopController(30,
-                                                                                // GET request for getIpAddr using the
-                                                                                // extracted
-                                                                                // accessToken
-                                                                                httpSampler(config.getBaseUrl()
-                                                                                                + ApiConstants.UVMC_GET_IP_ADDR)
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT),
-                                                                                                                // Extract
-                                                                                                                // ipAddress
-                                                                                                                // from
-                                                                                                                // response
-                                                                                                                jsonExtractor("ipAddress",
-                                                                                                                                "ipAddress")
-                                                                                                                                .defaultValue("NOT_FOUND")),
+                                                                // Execute Authenticated Requests
 
-                                                                                // POST request for updateDevice using
-                                                                                // the extracted
-                                                                                // ipAddress
-                                                                                httpSampler(config.getBaseUrl()
-                                                                                                + ApiConstants.UVMC_UPDATE_DEVICE)
-                                                                                                .post(gson.toJson(
-                                                                                                                updateDeviceRequest),
-                                                                                                                ContentType.APPLICATION_JSON)
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT),
-                                                                                                                // Extract
-                                                                                                                // coolingPeriod
-                                                                                                                // from
-                                                                                                                // response
-                                                                                                                jsonExtractor("coolingPeriod",
-                                                                                                                                "coolingPeriod")
-                                                                                                                                .defaultValue("NOT_FOUND")
-                                                                                                // Debug block removed
-                                                                                                ),
+                                                                // GET request for getIpAddr using the
+                                                                // extracted
+                                                                // accessToken
+                                                                httpSampler(ApiConstants.UVMC_GET_IP_ADDR, config
+                                                                                .getBaseUrl()
+                                                                                + ApiConstants.UVMC_GET_IP_ADDR)
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT),
+                                                                                                // Extract
+                                                                                                // ipAddress
+                                                                                                // from
+                                                                                                // response
+                                                                                                jsonExtractor("ipAddress",
+                                                                                                                "ipAddress")
+                                                                                                                .defaultValue("NOT_FOUND")),
 
-                                                                                // GET request for user/attribute using
-                                                                                // the extracted
-                                                                                // accessToken
-                                                                                httpSampler(config.getBaseUrl()
-                                                                                                + ApiConstants.UVMC_USER_ATTRIBUTE)
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT)
-                                                                                                // TODO: Add JSON
-                                                                                                // extractors for
-                                                                                                // response data if
-                                                                                                // needed
-                                                                                                ),
+                                                                // POST request for updateDevice using
+                                                                // the extracted
+                                                                // ipAddress
+                                                                httpSampler(ApiConstants.UVMC_UPDATE_DEVICE, config
+                                                                                .getBaseUrl()
+                                                                                + ApiConstants.UVMC_UPDATE_DEVICE)
+                                                                                .post(gson.toJson(
+                                                                                                updateDeviceRequest),
+                                                                                                ContentType.APPLICATION_JSON)
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT),
+                                                                                                // Extract
+                                                                                                // coolingPeriod
+                                                                                                // from
+                                                                                                // response
+                                                                                                jsonExtractor("coolingPeriod",
+                                                                                                                "coolingPeriod")
+                                                                                                                .defaultValue("NOT_FOUND")
+                                                                                // Debug block removed
+                                                                                ),
 
-                                                                                // GET request for user/current using
-                                                                                // the extracted
-                                                                                // accessToken
-                                                                                httpSampler(config.getBaseUrl()
-                                                                                                + ApiConstants.UVMC_USER_CURRENT)
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT),
+                                                                // GET request for user/attribute using
+                                                                // the extracted
+                                                                // accessToken
+                                                                httpSampler(ApiConstants.UVMC_USER_ATTRIBUTE, config
+                                                                                .getBaseUrl()
+                                                                                + ApiConstants.UVMC_USER_ATTRIBUTE)
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT)
+                                                                                // TODO: Add JSON
+                                                                                // extractors for
+                                                                                // response data if
+                                                                                // needed
+                                                                                ),
 
-                                                                                                                jsonExtractor("walletCreated",
-                                                                                                                                "walletCreated")
-                                                                                                                                .defaultValue("true")),
+                                                                // GET request for user/current using
+                                                                // the extracted
+                                                                // accessToken
+                                                                httpSampler(ApiConstants.UVMC_USER_CURRENT, config
+                                                                                .getBaseUrl()
+                                                                                + ApiConstants.UVMC_USER_CURRENT)
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT),
 
-                                                                                // Conditional execution: Only register
-                                                                                // wallet if walletCreated is false
-                                                                                ifController("${walletCreated}"
-                                                                                                + " == false")
-                                                                                                .children(
-                                                                                                                httpSampler(config
+                                                                                                jsonExtractor("walletCreated",
+                                                                                                                "walletCreated")
+                                                                                                                .defaultValue("true")),
+
+                                                                // Conditional execution: Only register
+                                                                // wallet if walletCreated is false
+                                                                ifController("${walletCreated}"
+                                                                                + " == false")
+                                                                                .children(
+                                                                                                httpSampler(ApiConstants.UVMC_USER_WALLET_REGISTER,
+                                                                                                                config
                                                                                                                                 .getBaseUrl()
                                                                                                                                 + ApiConstants.UVMC_USER_WALLET_REGISTER)
-                                                                                                                                .post("",
-                                                                                                                                                ContentType.APPLICATION_JSON)
-                                                                                                                                .children(
-                                                                                                                                                httpHeaders()
-                                                                                                                                                                .header("Authorization",
-                                                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                                                .header("User-Agent",
-                                                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                                                .header("Accept",
-                                                                                                                                                                                TestData.HEADER_ACCEPT)
+                                                                                                                .post("",
+                                                                                                                                ContentType.APPLICATION_JSON)
+                                                                                                                .children(
+                                                                                                                                httpHeaders()
+                                                                                                                                                .header("Authorization",
+                                                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                                                .header("Accept-Encoding",
+                                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                                                .header("User-Agent",
+                                                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                                                .header("Accept",
+                                                                                                                                                                TestData.HEADER_ACCEPT)
 
-                                                                                                                                )),
+                                                                                                                )),
 
-                                                                                // GET request for npc/cards using the
-                                                                                // extracted
-                                                                                // accessToken
-                                                                                httpSampler(config.getBaseUrl()
-                                                                                                + ApiConstants.UVMC_NPC_CARDS)
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT)
-                                                                                                // TODO: Add JSON
-                                                                                                // extractors for
-                                                                                                // response data if
-                                                                                                // needed
-                                                                                                ),
+                                                                // GET request for npc/cards using the
+                                                                // extracted
+                                                                // accessToken
+                                                                httpSampler(ApiConstants.UVMC_NPC_CARDS, config
+                                                                                .getBaseUrl()
+                                                                                + ApiConstants.UVMC_NPC_CARDS)
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT)
+                                                                                // TODO: Add JSON
+                                                                                // extractors for
+                                                                                // response data if
+                                                                                // needed
+                                                                                ),
 
-                                                                                // GET request for user/preference using
-                                                                                // the extracted
-                                                                                // accessToken
-                                                                                httpSampler(config.getBaseUrl()
-                                                                                                + ApiConstants.UVMC_USER_PREFERENCE)
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT)
-                                                                                                // TODO: Add JSON
-                                                                                                // extractors for
-                                                                                                // response data if
-                                                                                                // needed
-                                                                                                ),
+                                                                // GET request for user/preference using
+                                                                // the extracted
+                                                                // accessToken
+                                                                httpSampler(ApiConstants.UVMC_USER_PREFERENCE, config
+                                                                                .getBaseUrl()
+                                                                                + ApiConstants.UVMC_USER_PREFERENCE)
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT)
+                                                                                // TODO: Add JSON
+                                                                                // extractors for
+                                                                                // response data if
+                                                                                // needed
+                                                                                ),
 
-                                                                                // GET request for paymentmethod/list
-                                                                                // using the
-                                                                                // extracted accessToken
-                                                                                httpSampler(config.getBaseUrl()
+                                                                // GET request for paymentmethod/list
+                                                                // using the
+                                                                // extracted accessToken
+                                                                httpSampler(ApiConstants.UVMC_PAYMENT_METHOD_LIST,
+                                                                                config.getBaseUrl()
                                                                                                 + ApiConstants.UVMC_PAYMENT_METHOD_LIST)
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT)
-                                                                                                // TODO: Add JSON
-                                                                                                // extractors for
-                                                                                                // response data if
-                                                                                                // needed
-                                                                                                ),
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT)
+                                                                                // TODO: Add JSON
+                                                                                // extractors for
+                                                                                // response data if
+                                                                                // needed
+                                                                                ),
 
-                                                                                // GET request for maintenance using the
-                                                                                // extracted
-                                                                                // accessToken
-                                                                                httpSampler(config.getBaseUrl()
-                                                                                                + ApiConstants.UVMC_MAINTENANCE)
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT)
-                                                                                                // TODO: Add JSON
-                                                                                                // extractors for
-                                                                                                // response data if
-                                                                                                // needed
-                                                                                                ),
+                                                                // GET request for maintenance using the
+                                                                // extracted
+                                                                // accessToken
+                                                                httpSampler(ApiConstants.UVMC_MAINTENANCE, config
+                                                                                .getBaseUrl()
+                                                                                + ApiConstants.UVMC_MAINTENANCE)
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT)
+                                                                                // TODO: Add JSON
+                                                                                // extractors for
+                                                                                // response data if
+                                                                                // needed
+                                                                                ),
 
-                                                                                // GET request for appversion/android
-                                                                                // with query
-                                                                                // parameters
-                                                                                httpSampler(config.getBaseUrl()
+                                                                // GET request for appversion/android
+                                                                // with query
+                                                                // parameters
+                                                                httpSampler(ApiConstants.UVMC_APP_VERSION_ANDROID,
+                                                                                config.getBaseUrl()
                                                                                                 + ApiConstants.UVMC_APP_VERSION_ANDROID
                                                                                                 +
                                                                                                 "?version="
                                                                                                 + config.getAppVersion()
                                                                                                 + "&codeVersion="
                                                                                                 + config.getCodeVersion())
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT)
-                                                                                                // TODO: Add JSON
-                                                                                                // extractors for
-                                                                                                // response data if
-                                                                                                // needed
-                                                                                                ),
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT)
+                                                                                // TODO: Add JSON
+                                                                                // extractors for
+                                                                                // response data if
+                                                                                // needed
+                                                                                ),
 
-                                                                                // GET request for announcement/banner
-                                                                                // using the
-                                                                                // extracted accessToken
-                                                                                httpSampler(config.getBaseUrl()
+                                                                // GET request for announcement/banner
+                                                                // using the
+                                                                // extracted accessToken
+                                                                httpSampler(ApiConstants.UVMC_ANNOUNCEMENT_BANNER,
+                                                                                config.getBaseUrl()
                                                                                                 + ApiConstants.UVMC_ANNOUNCEMENT_BANNER)
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT)
-                                                                                                // TODO: Add JSON
-                                                                                                // extractors for
-                                                                                                // response data if
-                                                                                                // needed
-                                                                                                ),
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT)
+                                                                                // TODO: Add JSON
+                                                                                // extractors for
+                                                                                // response data if
+                                                                                // needed
+                                                                                ),
 
-                                                                                // GET request for marketing/banner
-                                                                                // using the extracted
-                                                                                // accessToken
-                                                                                httpSampler(config.getBaseUrl()
-                                                                                                + ApiConstants.UVMC_MARKETING_BANNER)
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT)
-                                                                                                // TODO: Add JSON
-                                                                                                // extractors for
-                                                                                                // response data if
-                                                                                                // needed
-                                                                                                ),
+                                                                // GET request for marketing/banner
+                                                                // using the extracted
+                                                                // accessToken
+                                                                httpSampler(ApiConstants.UVMC_MARKETING_BANNER, config
+                                                                                .getBaseUrl()
+                                                                                + ApiConstants.UVMC_MARKETING_BANNER)
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT)
+                                                                                // TODO: Add JSON
+                                                                                // extractors for
+                                                                                // response data if
+                                                                                // needed
+                                                                                ),
 
-                                                                                // POST request for notification/last
-                                                                                // using the
-                                                                                // extracted accessToken
-                                                                                httpSampler(config.getBaseUrl()
-                                                                                                + ApiConstants.UVMC_NOTIFICATION_LAST)
-                                                                                                .post("", ContentType.APPLICATION_JSON) // Empty
-                                                                                                                                        // body
-                                                                                                                                        // POST
-                                                                                                                                        // request
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT)
-                                                                                                // TODO: Add JSON
-                                                                                                // extractors for
-                                                                                                // response data if
-                                                                                                // needed
-                                                                                                ),
+                                                                // POST request for notification/last
+                                                                // using the
+                                                                // extracted accessToken
+                                                                httpSampler(ApiConstants.UVMC_NOTIFICATION_LAST, config
+                                                                                .getBaseUrl()
+                                                                                + ApiConstants.UVMC_NOTIFICATION_LAST)
+                                                                                .post("", ContentType.APPLICATION_JSON) // Empty
+                                                                                                                        // body
+                                                                                                                        // POST
+                                                                                                                        // request
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT)
+                                                                                // TODO: Add JSON
+                                                                                // extractors for
+                                                                                // response data if
+                                                                                // needed
+                                                                                ),
 
-                                                                                // GET request for
-                                                                                // notification/smartprompt/list with
-                                                                                // limit query parameter
-                                                                                httpSampler(
-                                                                                                config.getBaseUrl()
-                                                                                                                + ApiConstants.UVMC_NOTIFICATION_SMARTPROMPT_LIST
-                                                                                                                + "?limit="
-                                                                                                                + config.getNotificationLimit())
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT)
-                                                                                                // TODO: Add JSON
-                                                                                                // extractors for
-                                                                                                // response data if
-                                                                                                // needed
-                                                                                                ),
+                                                                // GET request for
+                                                                // notification/smartprompt/list with
+                                                                // limit query parameter
+                                                                httpSampler(ApiConstants.UVMC_NOTIFICATION_SMARTPROMPT_LIST,
+                                                                                config.getBaseUrl()
+                                                                                                + ApiConstants.UVMC_NOTIFICATION_SMARTPROMPT_LIST
+                                                                                                + "?limit="
+                                                                                                + config.getNotificationLimit())
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT)
+                                                                                // TODO: Add JSON
+                                                                                // extractors for
+                                                                                // response data if
+                                                                                // needed
+                                                                                ),
 
-                                                                                // POST request for notification/token
-                                                                                httpSampler(config.getBaseUrl()
-                                                                                                + ApiConstants.UVMC_NOTIFICATION_TOKEN)
-                                                                                                .post(gson.toJson(
-                                                                                                                notificationTokenRequest),
-                                                                                                                ContentType.APPLICATION_JSON)
-                                                                                                .children(
-                                                                                                                httpHeaders()
-                                                                                                                                .header("Authorization",
-                                                                                                                                                "Bearer ${accessToken}")
-                                                                                                                                .header("Accept-Encoding",
-                                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
-                                                                                                                                .header("User-Agent",
-                                                                                                                                                TestData.HEADER_USER_AGENT)
-                                                                                                                                .header("Accept",
-                                                                                                                                                TestData.HEADER_ACCEPT)
-                                                                                                // TODO: Add JSON
-                                                                                                // extractors for
-                                                                                                // response data if
-                                                                                                // needed
-                                                                                                )),
+                                                                // POST request for notification/token
+                                                                httpSampler(ApiConstants.UVMC_NOTIFICATION_TOKEN, config
+                                                                                .getBaseUrl()
+                                                                                + ApiConstants.UVMC_NOTIFICATION_TOKEN)
+                                                                                .post(gson.toJson(
+                                                                                                notificationTokenRequest),
+                                                                                                ContentType.APPLICATION_JSON)
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT)
+                                                                                // TODO: Add JSON
+                                                                                // extractors for
+                                                                                // response data if
+                                                                                // needed
+                                                                                ),
+
+                                                                // POST request for key/rsa?key=true
+                                                                httpSampler(ApiConstants.UVMC_KEY_RSA, config
+                                                                                .getBaseUrl()
+                                                                                + ApiConstants.UVMC_KEY_RSA)
+                                                                                .post("", ContentType.APPLICATION_JSON)
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("Accept-Encoding",
+                                                                                                                                TestData.HEADER_ACCEPT_ENCODING)
+                                                                                                                .header("User-Agent",
+                                                                                                                                TestData.HEADER_USER_AGENT)
+                                                                                                                .header("Accept",
+                                                                                                                                TestData.HEADER_ACCEPT),
+                                                                                                regexExtractor("PUBLIC_KEY",
+                                                                                                                "PUBLIC_KEY: (.+)")
+                                                                                                                .fieldToCheck(DslRegexExtractor.TargetField.RESPONSE_HEADERS)
+                                                                                                                .defaultValue("NOT_FOUND")),
+
+                                                                // POST request for processcard
+                                                                httpSampler(ApiConstants.PROCESS_CARD, config
+                                                                                .getLocalBaseUrl()
+                                                                                + ApiConstants.PROCESS_CARD)
+                                                                                .post(gson.toJson(
+                                                                                                cardTransactionRequest),
+                                                                                                ContentType.APPLICATION_JSON)
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("PUBLIC_KEY",
+                                                                                                                                "${PUBLIC_KEY}")),
+                                                                // Authenticated Token Update (ATU) Request
+                                                                // Encrypt card data using JSR223 Sampler
+                                                                jsr223Sampler(s -> {
+                                                                        String publicKey = s.vars.get("PUBLIC_KEY");
+                                                                        if (publicKey == null || "NOT_FOUND"
+                                                                                        .equals(publicKey)) {
+                                                                                s.sampleResult.setSuccessful(false);
+                                                                                s.sampleResult.setResponseMessage(
+                                                                                                "Public Key not found");
+                                                                                return;
+                                                                        }
+
+                                                                        String cardJson = gson
+                                                                                        .toJson(cardTransactionRequest);
+                                                                        byte[] bodyBytes = cardJson.getBytes(
+                                                                                        java.nio.charset.StandardCharsets.UTF_8);
+
+                                                                        try {
+                                                                                CardEncryptionService.EncryptionResult result = CardEncryptionService
+                                                                                                .encryptCard(publicKey,
+                                                                                                                bodyBytes);
+
+                                                                                s.vars.put("encrypt_body", result
+                                                                                                .getEncryptedBody());
+                                                                                s.vars.put("x_encryption_key", result
+                                                                                                .getEncryptedKey());
+                                                                                s.vars.put("x_encryption_iv",
+                                                                                                result.getIv());
+                                                                                s.vars.put("x_encryption",
+                                                                                                result.getEncryption());
+                                                                                s.sampleResult.setSuccessful(true);
+                                                                        } catch (Exception e) {
+                                                                                s.sampleResult.setSuccessful(false);
+                                                                                s.sampleResult.setResponseMessage(
+                                                                                                "Encryption failed: "
+                                                                                                                + e.getMessage());
+                                                                                e.printStackTrace();
+                                                                        }
+                                                                }),
+                                                                // POST request for paymentmethod/nfp/atu
+                                                                httpSampler(ApiConstants.UVMC_PAYMENT_METHOD_NFP_ATU,
+                                                                                config.getBaseUrl()
+                                                                                                + ApiConstants.UVMC_PAYMENT_METHOD_NFP_ATU)
+                                                                                .post("${encrypt_body}",
+                                                                                                ContentType.APPLICATION_JSON)
+                                                                                .children(
+                                                                                                httpHeaders()
+                                                                                                                .header("Authorization",
+                                                                                                                                "Bearer ${accessToken}")
+                                                                                                                .header("X_ENCRYPTION",
+                                                                                                                                "${x_encryption}")
+                                                                                                                .header("X_ENCRYPTION_KEY",
+                                                                                                                                "${x_encryption_key}")
+                                                                                                                .header("X_ENCRYPTION_IV",
+                                                                                                                                "${x_encryption_iv}")
+                                                                                                                .header("Accept",
+                                                                                                                                "application/json")),
                                                                 // POST request for auth/logout after all APIs
-                                                                httpSampler(config.getBaseUrl()
+                                                                httpSampler(ApiConstants.UVMC_AUTH_LOGOUT, config
+                                                                                .getBaseUrl()
                                                                                 + ApiConstants.UVMC_AUTH_LOGOUT)
                                                                                 .post("", ContentType.APPLICATION_JSON)
                                                                                 .children(

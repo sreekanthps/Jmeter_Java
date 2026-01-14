@@ -3,6 +3,7 @@
 /Users/sreekanth/Documents/GitHub/Jmeter_Java/jmeter-java-project/src/main/java/com/nets/loadtest/apis/LoginApiTest.java
 /Users/sreekanth/Documents/GitHub/Jmeter_Java/jmeter-java-project/src/main/java/com/nets/loadtest/model/ProfileRequest.java
 /Users/sreekanth/Documents/GitHub/Jmeter_Java/jmeter-java-project/src/main/java/com/nets/loadtest/data/TestData.java
+/Users/sreekanth/Documents/GitHub/Jmeter_Java/jmeter-java-project/src/main/java/com/nets/loadtest/model/CardTransactionRequest.java
 /Users/sreekanth/Documents/GitHub/Jmeter_Java/jmeter-java-project/src/main/java/com/nets/loadtest/service/CardEncryptionService.java
 /Users/sreekanth/Documents/GitHub/Jmeter_Java/jmeter-java-project/src/main/java/com/nets/loadtest/model/UserAutoSignInRequest.java
 /Users/sreekanth/Documents/GitHub/Jmeter_Java/jmeter-java-project/src/main/java/com/nets/loadtest/JMeterRunner.java

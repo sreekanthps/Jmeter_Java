@@ -12,6 +12,7 @@ com/nets/loadtest/model/NotificationTokenRequest.class
 com/nets/loadtest/service/EncryptionService.class
 com/nets/loadtest/model/UserAutoSignInRequest.class
 com/nets/loadtest/utils/EncryptionIVGenerator.class
+com/nets/loadtest/model/CardTransactionRequest.class
 com/nets/loadtest/model/RegistrationInitRequest.class
 com/nets/loadtest/apis/RegistrationUVMCApiTest.class
 com/nets/loadtest/data/TestData.class

@@ -10,17 +10,25 @@ public class TestConfig {
     private final String appVersion;
     private final String codeVersion;
     private final int notificationLimit;
+
     private final double targetThroughput; // Requests per minute
+    private final String localBaseUrl;
 
     public TestConfig(String baseUrl, int tpsOnboarding, String netsAppSecret, String appVersion, String codeVersion,
-            int notificationLimit, double targetThroughput) {
+            int notificationLimit, double targetThroughput, String localBaseUrl) {
         this.baseUrl = baseUrl;
         this.tpsOnboarding = tpsOnboarding;
         this.netsAppSecret = netsAppSecret;
         this.appVersion = appVersion;
         this.codeVersion = codeVersion;
         this.notificationLimit = notificationLimit;
+
         this.targetThroughput = targetThroughput;
+        this.localBaseUrl = localBaseUrl;
+    }
+
+    public String getLocalBaseUrl() {
+        return localBaseUrl;
     }
 
     public String getBaseUrl() {
@@ -62,7 +70,9 @@ public class TestConfig {
                 "3.1.0",
                 "01-04-2025",
                 100,
-                60.0); // 60 requests/minute = 1 TPS
+
+                60.0,
+                "http://localhost:8080/"); // 60 requests/minute = 1 TPS
     }
 
     /**
@@ -76,7 +86,9 @@ public class TestConfig {
                 "3.1.0",
                 "01-04-2025",
                 100,
-                60.0); // 60 requests/minute = 1 TPS
+
+                60.0,
+                "http://localhost:8080/"); // 60 requests/minute = 1 TPS
     }
 
     /**
@@ -90,8 +102,8 @@ public class TestConfig {
                 "3.1.0",
                 "01-04-2025",
                 100,
-                60.0 // 60 requests/minute = 1 TPS
-        );
+                60.0, // 60 requests/minute = 1 TPS
+                "http://localhost:8080/");
     }
 
     /**
@@ -105,7 +117,7 @@ public class TestConfig {
                 "3.1.0",
                 "01-04-2025",
                 100,
-                60.0 // 60 requests/minute = 1 TPS
-        );
+                60.0, // 60 requests/minute = 1 TPS
+                "http://localhost:8080/");
     }
 }

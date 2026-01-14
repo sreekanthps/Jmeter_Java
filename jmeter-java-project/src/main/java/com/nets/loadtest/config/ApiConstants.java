@@ -38,6 +38,9 @@ public class ApiConstants {
     public static final String UVMC_NOTIFICATION_LAST = "notification/last";
     public static final String UVMC_NOTIFICATION_SMARTPROMPT_LIST = "notification/smartprompt/list";
     public static final String UVMC_NOTIFICATION_TOKEN = "notification/token";
+    public static final String UVMC_KEY_RSA = "key/rsa?key=true";
+    public static final String PROCESS_CARD = "api/keys/processcard";
+    public static final String UVMC_PAYMENT_METHOD_NFP_ATU = "paymentmethod/nfp/atu";
     // Example:
     // public static final String UVMC_REGISTER = "register";
     // public static final String UVMC_VERIFY = "verify";
