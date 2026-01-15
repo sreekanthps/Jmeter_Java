@@ -15,6 +15,8 @@ import java.util.Base64;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 
+import com.nets.loadtest.config.ApiConstants;
+
 public class CardEncryptionService {
 
     private static final int AES_KEY_SIZE = 256; // bits
@@ -201,7 +203,7 @@ public class CardEncryptionService {
         public final String iv;
 
         @com.fasterxml.jackson.annotation.JsonProperty("x_encryption")
-        private final String encryption = "AES_GCM_NoPadding-RSA_OAEPWithSHA256";
+        private final String encryption = ApiConstants.ENCRYPTION_ALGORITHM;
 
         public EncryptionResult(String k, String b, String i) {
             this.encryptedKey = k;

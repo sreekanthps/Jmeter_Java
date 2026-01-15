@@ -41,9 +41,9 @@ public class ApiConstants {
     public static final String UVMC_KEY_RSA = "key/rsa?key=true";
     public static final String PROCESS_CARD = "api/keys/processcard";
     public static final String UVMC_PAYMENT_METHOD_NFP_ATU = "paymentmethod/nfp/atu";
-    // Example:
-    // public static final String UVMC_REGISTER = "register";
-    // public static final String UVMC_VERIFY = "verify";
+
+    // Encryption Constants
+    public static final String ENCRYPTION_ALGORITHM = "AES_GCM_NoPadding-RSA_OAEPWithSHA256";
 
     private ApiConstants() {
         // Utility class, prevent instantiation

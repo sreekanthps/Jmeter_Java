@@ -16,7 +16,6 @@ import com.nets.loadtest.service.CardEncryptionService;
 import com.nets.loadtest.model.UserAutoSignInRequest;
 
 import java.io.IOException;
-import java.time.Duration;
 
 /**
  * CIAM API UVMC Registration Test using JMeter Java DSL.
@@ -33,8 +32,8 @@ public class RegistrationUVMCApiTest {
                 // Create request payload for userAutoSignIn
                 // Using variables from CSV: ${email} and ${onboardingId}
                 UserAutoSignInRequest autoSignInRequest = new UserAutoSignInRequest(
-                                "${email}",
-                                "${onboardingId}");
+                                "S3407752E+6561@gmail.com",
+                                "fRzIVQRNSON9/kM/WO5Hqg8U2P2bxh9Fgr226OC1590OcDgs+3/0slPQuDm7X9ceN68j5eMPpF3a0aRBiFvjafi8CItR3dEGI9zF59owqtrs9IW+fxwYOJxTbKjNJM6MN0/edJ/GbDqrjkwMTCa0rTpwUMDtBLTM3c5mhyKSMroMtMl8rVgfV8y3OILGJr1VtIqZzMHlwbklG56NVIZfj/LPKgF1/i/DpQR4yPGQihBJ286iP/i0TWNVLHCcls/fbiyAXG5VFYS0CtD5+PJYSQGoLPtf2Hu/VsII3CRBQLYrLOSLbBIZoEadhETBrf0UKSWU6mK1/iSrALKXN0LOnw==");
 
                 // Create request payload for updateDevice
                 // Note: ipAddress will use the ${ipAddress} variable extracted from getIpAddr
@@ -65,20 +64,11 @@ public class RegistrationUVMCApiTest {
                                 // CSV Data Set Config to read email and onboardingId from export_20260112.csv
                                 csvDataSet("export_20260112.csv"),
 
-                                threadGroup()
-                                                .rampToAndHold(1, Duration.ofSeconds(3), Duration.ofSeconds(0))
+                                threadGroup(1, 1) // 1 thread, 1 iteration - runs all APIs once
                                                 .children(
-                                                                // Thread Group: 10 threads with 3 seconds ramp-up
-                                                                // period
-                                                                // NOTE: Target throughput is configured in TestConfig
-                                                                // (60
-                                                                // requests/minute = 1
-                                                                // TPS)
-                                                                // To control throughput, adjust the number of threads
-                                                                // and iterations
-                                                                // Or use preciseThroughputTimer() if available in your
-                                                                // JMeter DSL
-                                                                // version
+                                                                // Thread Group: Single user, single iteration
+                                                                // This ensures all APIs in the test plan execute
+                                                                // completely
 
                                                                 // POST request for auth/userAutoSignIn
                                                                 httpSampler(ApiConstants.UVMC_AUTH_USER_AUTO_SIGNIN,
@@ -524,49 +514,97 @@ public class RegistrationUVMCApiTest {
                                                                                                                 .fieldToCheck(DslRegexExtractor.TargetField.RESPONSE_HEADERS)
                                                                                                                 .defaultValue("NOT_FOUND")),
 
-                                                                // POST request for processcard
-                                                                httpSampler(ApiConstants.PROCESS_CARD, config
-                                                                                .getLocalBaseUrl()
-                                                                                + ApiConstants.PROCESS_CARD)
-                                                                                .post(gson.toJson(
-                                                                                                cardTransactionRequest),
-                                                                                                ContentType.APPLICATION_JSON)
-                                                                                .children(
-                                                                                                httpHeaders()
-                                                                                                                .header("PUBLIC_KEY",
-                                                                                                                                "${PUBLIC_KEY}")),
-                                                                // Authenticated Token Update (ATU) Request
                                                                 // Encrypt card data using JSR223 Sampler
                                                                 jsr223Sampler(s -> {
+                                                                        System.out.println(
+                                                                                        "=== Starting Card Encryption ===");
+
                                                                         String publicKey = s.vars.get("PUBLIC_KEY");
+                                                                        System.out.println("Retrieved PUBLIC_KEY: " +
+                                                                                        (publicKey != null ? publicKey
+                                                                                                        .substring(0, Math
+                                                                                                                        .min(50, publicKey
+                                                                                                                                        .length()))
+                                                                                                        + "..."
+                                                                                                        : "NULL"));
+
                                                                         if (publicKey == null || "NOT_FOUND"
                                                                                         .equals(publicKey)) {
+                                                                                System.out.println(
+                                                                                                "ERROR: Public Key not found!");
                                                                                 s.sampleResult.setSuccessful(false);
                                                                                 s.sampleResult.setResponseMessage(
                                                                                                 "Public Key not found");
                                                                                 return;
                                                                         }
 
+                                                                        // Convert cardTransactionRequest to JSON
                                                                         String cardJson = gson
                                                                                         .toJson(cardTransactionRequest);
+                                                                        System.out.println("Card JSON: " + cardJson);
+
+                                                                        // Convert JSON string to byte array
                                                                         byte[] bodyBytes = cardJson.getBytes(
                                                                                         java.nio.charset.StandardCharsets.UTF_8);
+                                                                        System.out.println("Body bytes length: "
+                                                                                        + bodyBytes.length);
 
                                                                         try {
+                                                                                System.out.println(
+                                                                                                "Calling CardEncryptionService.encryptCard()...");
+
+                                                                                // Encrypt using CardEncryptionService
                                                                                 CardEncryptionService.EncryptionResult result = CardEncryptionService
                                                                                                 .encryptCard(publicKey,
                                                                                                                 bodyBytes);
 
+                                                                                System.out.println(
+                                                                                                "Encryption SUCCESS!");
+                                                                                System.out.println(
+                                                                                                "Encrypted Body (first 100 chars): "
+                                                                                                                +
+                                                                                                                result.getEncryptedBody()
+                                                                                                                                .substring(0, Math
+                                                                                                                                                .min(100, result.getEncryptedBody()
+                                                                                                                                                                .length()))
+                                                                                                                + "...");
+                                                                                System.out.println(
+                                                                                                "Encrypted Key (first 100 chars): "
+                                                                                                                +
+                                                                                                                result.getEncryptedKey()
+                                                                                                                                .substring(0, Math
+                                                                                                                                                .min(100, result.getEncryptedKey()
+                                                                                                                                                                .length()))
+                                                                                                                + "...");
+                                                                                System.out.println("IV: "
+                                                                                                + result.getIv());
+                                                                                System.out.println(
+                                                                                                "Encryption Algorithm: "
+                                                                                                                + result.getEncryption());
+
+                                                                                // Store encrypted values in JMeter
+                                                                                // variables
                                                                                 s.vars.put("encrypt_body", result
                                                                                                 .getEncryptedBody());
                                                                                 s.vars.put("x_encryption_key", result
                                                                                                 .getEncryptedKey());
                                                                                 s.vars.put("x_encryption_iv",
                                                                                                 result.getIv());
-                                                                                s.vars.put("x_encryption",
-                                                                                                result.getEncryption());
+
+                                                                                System.out.println(
+                                                                                                "Stored encrypted values in JMeter variables");
+                                                                                System.out.println(
+                                                                                                "=== Card Encryption Completed Successfully ===");
+
                                                                                 s.sampleResult.setSuccessful(true);
                                                                         } catch (Exception e) {
+                                                                                System.out.println(
+                                                                                                "ERROR: Encryption FAILED!");
+                                                                                System.out.println("Exception: " + e
+                                                                                                .getClass().getName());
+                                                                                System.out.println("Message: "
+                                                                                                + e.getMessage());
+
                                                                                 s.sampleResult.setSuccessful(false);
                                                                                 s.sampleResult.setResponseMessage(
                                                                                                 "Encryption failed: "
@@ -574,24 +612,49 @@ public class RegistrationUVMCApiTest {
                                                                                 e.printStackTrace();
                                                                         }
                                                                 }),
+
                                                                 // POST request for paymentmethod/nfp/atu
                                                                 httpSampler(ApiConstants.UVMC_PAYMENT_METHOD_NFP_ATU,
                                                                                 config.getBaseUrl()
                                                                                                 + ApiConstants.UVMC_PAYMENT_METHOD_NFP_ATU)
                                                                                 .post("${encrypt_body}",
-                                                                                                ContentType.APPLICATION_JSON)
+                                                                                                ContentType.TEXT_PLAIN)
                                                                                 .children(
                                                                                                 httpHeaders()
                                                                                                                 .header("Authorization",
                                                                                                                                 "Bearer ${accessToken}")
-                                                                                                                .header("X_ENCRYPTION",
-                                                                                                                                "${x_encryption}")
-                                                                                                                .header("X_ENCRYPTION_KEY",
+                                                                                                                .header("X-ENCRYPTION",
+                                                                                                                                ApiConstants.ENCRYPTION_ALGORITHM)
+                                                                                                                .header("X-ENCRYPTION-KEY",
                                                                                                                                 "${x_encryption_key}")
-                                                                                                                .header("X_ENCRYPTION_IV",
+                                                                                                                .header("X-ENCRYPTION-IV",
                                                                                                                                 "${x_encryption_iv}")
+                                                                                                                .header("Content-Type",
+                                                                                                                                "application/json")
                                                                                                                 .header("Accept",
-                                                                                                                                "application/json")),
+                                                                                                                                "application/json"),
+                                                                                                // Debug: Log response
+                                                                                                // for
+                                                                                                // paymentmethod/nfp/atu
+                                                                                                jsr223PostProcessor(
+                                                                                                                s -> {
+                                                                                                                        System.out.println(
+                                                                                                                                        "=== paymentmethod/nfp/atu Response ===");
+                                                                                                                        System.out.println(
+                                                                                                                                        "Response Code: "
+                                                                                                                                                        + s.prev.getResponseCode());
+                                                                                                                        System.out.println(
+                                                                                                                                        "Response Message: "
+                                                                                                                                                        + s.prev.getResponseMessage());
+                                                                                                                        System.out.println(
+                                                                                                                                        "Response Body: "
+                                                                                                                                                        + s.prev.getResponseDataAsString());
+                                                                                                                        System.out.println(
+                                                                                                                                        "Response Headers: "
+                                                                                                                                                        + s.prev.getResponseHeaders());
+                                                                                                                        System.out.println(
+                                                                                                                                        "=======================================");
+                                                                                                                })),
                                                                 // POST request for auth/logout after all APIs
                                                                 httpSampler(ApiConstants.UVMC_AUTH_LOGOUT, config
                                                                                 .getBaseUrl()

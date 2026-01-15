@@ -16,3 +16,6 @@ results.jtl/
 
 # OS files
 .DS_Store
+
+# Log files
+*.log

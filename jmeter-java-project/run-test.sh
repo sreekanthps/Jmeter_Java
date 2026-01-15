@@ -8,7 +8,7 @@ echo "Configuration: UVMC SIT Environment"
 echo "=================================="
 
 # Run the test using Maven exec plugin
-mvn clean compile exec:java -Dexec.mainClass="com.example.loadtest.JMeterRunner"
+mvn clean compile exec:java -Dexec.mainClass="com.nets.loadtest.JMeterRunner"
 
 # Check if the test completed successfully
 if [ $? -eq 0 ]; then
